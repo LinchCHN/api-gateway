@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API Gateway</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+.container { max-width: 1100px; margin: 0 auto; padding: 24px; }
+h1 { font-size: 1.5rem; margin-bottom: 24px; color: #f1f5f9; }
+h1 span { color: #38bdf8; }
+.card { background: #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 16px; border: 1px solid #334155; }
+.card h2 { font-size: 1.1rem; margin-bottom: 16px; color: #94a3b8; }
+.btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 500; transition: all 0.15s; }
+.btn-primary { background: #2563eb; color: white; }
+.btn-primary:hover { background: #1d4ed8; }
+.btn-danger { background: #dc2626; color: white; }
+.btn-danger:hover { background: #b91c1c; }
+.btn-sm { padding: 4px 10px; font-size: 0.8rem; }
+.btn-success { background: #16a34a; color: white; }
+.btn-success:hover { background: #15803d; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #334155; font-size: 0.9rem; }
+th { color: #94a3b8; font-weight: 500; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 500; }
+.badge-active { background: #166534; color: #86efac; }
+.badge-inactive { background: #7f1d1d; color: #fca5a5; }
+input, select { background: #0f172a; border: 1px solid #475569; color: #e2e8f0; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; width: 100%; }
+input:focus, select:focus { outline: none; border-color: #3b82f6; }
+label { display: block; margin-bottom: 4px; font-size: 0.85rem; color: #94a3b8; }
+.form-group { margin-bottom: 12px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.actions { display: flex; gap: 8px; margin-top: 16px; }
+.stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.stat-card { background: #0f172a; border-radius: 8px; padding: 16px; text-align: center; }
+.stat-value { font-size: 1.8rem; font-weight: 700; color: #38bdf8; }
+.stat-label { font-size: 0.8rem; color: #94a3b8; margin-top: 4px; }
+.code { background: #0f172a; padding: 12px; border-radius: 6px; font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 0.82rem; color: #a5f3fc; overflow-x: auto; white-space: pre; }
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; }
+.modal-overlay.show { display: flex; }
+.modal { background: #1e293b; border-radius: 12px; padding: 24px; width: 500px; max-width: 90vw; border: 1px solid #475569; max-height: 80vh; overflow-y: auto; }
+.modal h3 { margin-bottom: 16px; }
+.toast { position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: 8px; font-size: 0.9rem; z-index: 200; animation: slideIn 0.3s; }
+.toast-ok { background: #166534; color: #86efac; }
+.toast-err { background: #7f1d1d; color: #fca5a5; }
+@keyframes slideIn { from { transform: translateX(100px); opacity: 0; } }
+.tab-bar { display: flex; gap: 4px; margin-bottom: 20px; }
+.tab { padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; color: #94a3b8; background: transparent; border: none; }
+.tab.active { background: #334155; color: #f1f5f9; }
+.tab:hover { color: #f1f5f9; }
+.hidden { display: none !important; }
+.model-list { max-height: 360px; overflow-y: auto; background: #0f172a; border-radius: 6px; padding: 8px; }
+.model-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 4px; cursor: pointer; }
+.model-item:hover { background: #1e293b; }
+.model-item input[type=checkbox] { width: 16px; height: 16px; accent-color: #2563eb; cursor: pointer; flex-shrink: 0; }
+.model-item label { cursor: pointer; font-size: 0.88rem; color: #e2e8f0; flex: 1; }
+.model-item .tag { font-size: 0.72rem; padding: 1px 6px; border-radius: 4px; background: #334155; color: #94a3b8; }
+.scan-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+.selectAll { font-size: 0.8rem; color: #38bdf8; cursor: pointer; margin-left: auto; }
+.selectAll:hover { text-decoration: underline; }
+.provider-group { margin-bottom: 16px; }
+.provider-group-header { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #1e293b; border-radius: 8px 8px 0 0; border: 1px solid #334155; border-bottom: none; }
+.provider-group-header .name { font-weight: 600; color: #f1f5f9; }
+.provider-group-header .count { font-size: 0.8rem; color: #94a3b8; }
+.provider-group-body { border: 1px solid #334155; border-radius: 0 0 8px 8px; margin-bottom: 8px; }
+.provider-group-body tr:last-child td { border-bottom: none; }
+.key-display { display: inline-block; background: #0f172a; padding: 4px 10px; border-radius: 4px; font-family: monospace; font-size: 0.85rem; color: #a5f3fc; cursor: pointer; }
+.key-display:hover { background: #1e293b; }
+.copy-btn { background: none; border: none; color: #38bdf8; cursor: pointer; font-size: 0.8rem; margin-left: 4px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>&#9889; API <span>Gateway</span></h1>
+
+  <div class="tab-bar">
+    <button class="tab active" onclick="showTab('providers')">Providers</button>
+    <button class="tab" onclick="showTab('routes')">Model Routes</button>
+    <button class="tab" onclick="showTab('keys')">API Keys</button>
+    <button class="tab" onclick="showTab('stats')">Stats</button>
+    <button class="tab" onclick="showTab('usage')">Usage</button>
+  </div>
+
+  <!-- Providers Tab -->
+  <div id="tab-providers">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h2 style="margin:0">Providers</h2>
+        <button class="btn btn-primary" onclick="openAddModal()">+ Add Provider</button>
+      </div>
+      <table id="providers-table">
+        <thead><tr><th>Name</th><th>URL</th><th>Type</th><th>Models</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="providers-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Routes Tab -->
+  <div id="tab-routes" class="hidden">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h2 style="margin:0">Model Routes</h2>
+        <button class="btn btn-primary" onclick="openRouteModal()">+ Add Route</button>
+      </div>
+      <div id="routes-grouped"></div>
+    </div>
+  </div>
+
+  <!-- API Keys Tab -->
+  <div id="tab-keys" class="hidden">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h2 style="margin:0">Gateway API Keys</h2>
+        <button class="btn btn-primary" onclick="openKeyModal()">+ Generate Key</button>
+      </div>
+      <p style="color:#94a3b8;font-size:0.85rem;margin-bottom:12px">Use these sk-xxx keys in your tools. They'll be swapped to the real provider key automatically.</p>
+      <table>
+        <thead><tr><th>Name</th><th>Key</th><th>Models</th><th>Created</th><th>Actions</th></tr></thead>
+        <tbody id="keys-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Stats Tab -->
+  <div id="tab-stats" class="hidden">
+    <div class="card">
+      <h2>Statistics</h2>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-value" id="stat-total">-</div><div class="stat-label">Total Requests</div></div>
+        <div class="stat-card"><div class="stat-value" id="stat-models">-</div><div class="stat-label">Models Used</div></div>
+        <div class="stat-card"><div class="stat-value" id="stat-providers">-</div><div class="stat-label">Active Providers</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Usage Tab -->
+  <div id="tab-usage" class="hidden">
+    <div class="card">
+      <h2>How to Use</h2>
+      <p style="margin-bottom:12px;color:#94a3b8">Generate a gateway API key first, then configure your tools:</p>
+      <div class="form-group">
+        <label>OpenAI Compatible (Codex, Cursor, etc.)</label>
+        <div class="code" id="usage-openai"></div>
+      </div>
+      <div class="form-group">
+        <label>Anthropic Compatible (Claude Code, etc.)</label>
+        <div class="code" id="usage-anthropic"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Provider Modal -->
+<div class="modal-overlay" id="provider-modal">
+  <div class="modal">
+    <h3 id="modal-title">Add Provider</h3>
+    <input type="hidden" id="edit-name">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Name</label>
+        <input id="p-name" placeholder="e.g. openai-main">
+      </div>
+      <div class="form-group">
+        <label>Service Type</label>
+        <select id="p-type">
+          <option value="openai">OpenAI Compatible</option>
+          <option value="anthropic">Anthropic</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Base URL</label>
+      <input id="p-url" placeholder="https://api.openai.com/v1">
+    </div>
+    <div class="form-group">
+      <label>API Key (provider real key)</label>
+      <div style="position:relative">
+        <input id="p-key" placeholder="sk-..." type="password" style="padding-right:36px">
+        <span onclick="togglePwd(this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;color:#94a3b8;font-size:1.1rem">&#128065;</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Priority (lower = higher priority)</label>
+      <input id="p-priority" type="number" value="0">
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" onclick="saveProvider()">Save</button>
+      <button class="btn" style="background:#475569;color:#e2e8f0" onclick="closeModal('provider-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Route Modal -->
+<div class="modal-overlay" id="route-modal">
+  <div class="modal">
+    <h3>Add Model Route</h3>
+    <div class="form-group">
+      <label>Model Name</label>
+      <input id="r-model" placeholder="e.g. gpt-4o, claude-sonnet-4-20250514">
+    </div>
+    <div class="form-group">
+      <label>Provider</label>
+      <select id="r-provider"></select>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" onclick="saveRoute()">Save</button>
+      <button class="btn" style="background:#475569;color:#e2e8f0" onclick="closeModal('route-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Scan Models Modal -->
+<div class="modal-overlay" id="scan-modal">
+  <div class="modal">
+    <h3>Scan Models: <span id="scan-provider-name"></span></h3>
+    <div class="scan-bar">
+      <input id="scan-filter" placeholder="Filter models..." oninput="filterScanModels()">
+      <span class="selectAll" onclick="toggleScanAll()">Select All</span>
+    </div>
+    <div id="scan-loading" style="text-align:center;padding:20px;color:#94a3b8">Scanning...</div>
+    <div class="model-list hidden" id="scan-models"></div>
+    <div class="actions" style="margin-top:12px">
+      <button class="btn btn-primary" onclick="confirmScan()">Add Selected Routes</button>
+      <button class="btn" style="background:#475569;color:#e2e8f0" onclick="closeModal('scan-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Generate Key Modal -->
+<div class="modal-overlay" id="key-modal">
+  <div class="modal">
+    <h3>Generate API Key</h3>
+    <div class="form-group">
+      <label>Key Name</label>
+      <input id="k-name" placeholder="e.g. codex-key">
+    </div>
+    <div class="form-group">
+      <label>Allowed Models <span style="color:#94a3b8">(none checked = all models)</span></label>
+      <div class="scan-bar">
+        <input id="k-model-filter" placeholder="Filter..." oninput="filterKeyModels()">
+        <span class="selectAll" onclick="toggleKeyAll()">All / None</span>
+      </div>
+      <div class="model-list" id="k-models" style="max-height:300px">
+        <div style="color:#94a3b8;text-align:center;padding:12px">Loading...</div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" onclick="createKey()">Generate</button>
+      <button class="btn" style="background:#475569;color:#e2e8f0" onclick="closeModal('key-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '';
+
+function showTab(name) {
+  document.querySelectorAll('[id^="tab-"]').forEach(el => el.classList.add('hidden'));
+  document.getElementById('tab-' + name).classList.remove('hidden');
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  if (name === 'stats') loadStats();
+  if (name === 'routes') loadRoutes();
+  if (name === 'keys') loadKeys();
+  if (name === 'usage') updateUsage();
+}
+
+function toast(msg, ok) {
+  const t = document.createElement('div');
+  t.className = 'toast ' + (ok ? 'toast-ok' : 'toast-err');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+async function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(API + path, opts);
+  return r.json();
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+function togglePwd(el) {
+  const input = el.previousElementSibling;
+  if (input.type === 'password') {
+    input.type = 'text';
+    el.textContent = '\u{1f576}';
+  } else {
+    input.type = 'password';
+    el.textContent = '\u{1f441}';
+  }
+}
+
+// ---- Providers ----
+async function loadProviders() {
+  const providers = await api('GET', '/api/providers');
+  const cfg = await api('GET', '/api/config');
+  const routes = cfg.model_routes || {};
+  const tbody = document.getElementById('providers-body');
+  tbody.innerHTML = providers.map(p => {
+    const modelCount = Object.values(routes).filter(v => v === p.name).length;
+    return `<tr>
+    <td><strong>${esc(p.name)}</strong></td>
+    <td style="color:#94a3b8;font-size:0.82rem">${esc(p.base_url)}</td>
+    <td>${esc(p.service_type)}</td>
+    <td><span style="color:#38bdf8;font-weight:600">${modelCount}</span> models</td>
+    <td><span class="badge ${p.status === 'active' ? 'badge-active' : 'badge-inactive'}">${p.status}</span></td>
+    <td>
+      <button class="btn btn-sm btn-primary" onclick="scanModels('${esc(p.name)}')">Scan</button>
+      <button class="btn btn-sm btn-success" onclick="testProvider('${esc(p.name)}')">Test</button>
+      <button class="btn btn-sm" style="background:#475569" onclick="editProvider('${esc(p.name)}')">Edit</button>
+      <button class="btn btn-sm btn-danger" onclick="delProvider('${esc(p.name)}')">Del</button>
+    </td>
+  </tr>`;
+  }).join('');
+}
+
+function openAddModal() {
+  document.getElementById('modal-title').textContent = 'Add Provider';
+  document.getElementById('edit-name').value = '';
+  ['p-name','p-url','p-key'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('p-type').value = 'openai';
+  document.getElementById('p-priority').value = '0';
+  document.getElementById('provider-modal').classList.add('show');
+}
+
+async function editProvider(name) {
+  const cfg = await api('GET', '/api/config');
+  const p = cfg.providers.find(x => x.name === name);
+  if (!p) return;
+  document.getElementById('modal-title').textContent = 'Edit Provider';
+  document.getElementById('edit-name').value = name;
+  document.getElementById('p-name').value = p.name;
+  document.getElementById('p-url').value = p.base_url;
+  document.getElementById('p-key').value = p.api_key || '';
+  document.getElementById('p-type').value = p.service_type;
+  document.getElementById('p-priority').value = p.priority;
+  document.getElementById('provider-modal').classList.add('show');
+}
+
+async function saveProvider() {
+  const editName = document.getElementById('edit-name').value;
+  const data = {
+    name: document.getElementById('p-name').value,
+    base_url: document.getElementById('p-url').value,
+    api_key: document.getElementById('p-key').value,
+    service_type: document.getElementById('p-type').value,
+    priority: parseInt(document.getElementById('p-priority').value) || 0,
+  };
+  if (editName) {
+    await api('PUT', `/api/providers/${encodeURIComponent(editName)}`, data);
+    toast('Provider updated', true);
+  } else {
+    await api('POST', '/api/providers', data);
+    toast('Provider added', true);
+  }
+  closeModal('provider-modal');
+  loadProviders();
+}
+
+async function delProvider(name) {
+  await api('DELETE', `/api/providers/${encodeURIComponent(name)}`);
+  toast('Deleted', true);
+  loadProviders();
+}
+
+async function testProvider(name) {
+  toast('Testing...', true);
+  const r = await api('POST', `/api/test/${encodeURIComponent(name)}`);
+  toast(r.ok ? 'Connection OK!' : `Failed: ${r.error || r.status}`, r.ok);
+}
+
+// ---- Scan Models ----
+let scanData = { provider: '', models: [] };
+
+async function scanModels(name) {
+  scanData = { provider: name, models: [] };
+  document.getElementById('scan-provider-name').textContent = name;
+  document.getElementById('scan-loading').classList.remove('hidden');
+  document.getElementById('scan-loading').innerHTML = 'Scanning...';
+  document.getElementById('scan-models').classList.add('hidden');
+  document.getElementById('scan-models').innerHTML = '';
+  document.getElementById('scan-filter').value = '';
+  document.getElementById('scan-modal').classList.add('show');
+
+  const r = await api('GET', `/api/providers/${encodeURIComponent(name)}/models`);
+  document.getElementById('scan-loading').classList.add('hidden');
+
+  if (!r.ok) {
+    document.getElementById('scan-loading').classList.remove('hidden');
+    document.getElementById('scan-loading').innerHTML = `<span style="color:#fca5a5">Failed: ${esc(r.error || 'unknown error')}</span>`;
+    return;
+  }
+
+  const cfg = await api('GET', '/api/config');
+  const existing = new Set(Object.keys(cfg.model_routes || {}));
+
+  scanData.models = r.models;
+  const list = document.getElementById('scan-models');
+  list.innerHTML = r.models.map(m => {
+    const routed = existing.has(m);
+    return `<div class="model-item" onclick="this.querySelector('input').click()">
+      <input type="checkbox" value="${esc(m)}" ${routed ? '' : 'checked'} onclick="event.stopPropagation()">
+      <label>${esc(m)}</label>
+      ${routed ? '<span class="tag">routed</span>' : ''}
+    </div>`;
+  }).join('');
+  list.classList.remove('hidden');
+}
+
+function filterScanModels() {
+  const q = document.getElementById('scan-filter').value.toLowerCase();
+  document.querySelectorAll('#scan-models .model-item').forEach(el => {
+    const name = el.querySelector('label').textContent.toLowerCase();
+    el.style.display = name.includes(q) ? '' : 'none';
+  });
+}
+
+function toggleScanAll() {
+  const items = document.querySelectorAll('#scan-models .model-item:not([style*="display: none"]) input');
+  const allChecked = [...items].every(cb => cb.checked);
+  items.forEach(cb => cb.checked = !allChecked);
+}
+
+async function confirmScan() {
+  const checked = [...document.querySelectorAll('#scan-models input:checked')].map(cb => cb.value);
+  if (!checked.length) { toast('No models selected', false); return; }
+  const r = await api('POST', `/api/providers/${encodeURIComponent(scanData.provider)}/routes`, { models: checked });
+  toast(`Added ${r.count} model routes`, true);
+  closeModal('scan-modal');
+  loadProviders();
+  loadRoutes();
+}
+
+// ---- Model Routes (grouped by provider) ----
+async function loadRoutes() {
+  const cfg = await api('GET', '/api/config');
+  const routes = cfg.model_routes || {};
+  const grouped = {};
+  for (const [model, provider] of Object.entries(routes)) {
+    if (!grouped[provider]) grouped[provider] = [];
+    grouped[provider].push(model);
+  }
+  const container = document.getElementById('routes-grouped');
+  if (!Object.keys(grouped).length) {
+    container.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:20px">No routes yet. Use Scan on a provider to add models.</p>';
+  } else {
+    container.innerHTML = Object.entries(grouped).map(([provider, models]) => `
+      <div class="provider-group">
+        <div class="provider-group-header">
+          <span class="name">${esc(provider)}</span>
+          <span class="count">${models.length} models</span>
+        </div>
+        <div class="provider-group-body">
+          <table><tbody>
+            ${models.sort().map(m => `<tr>
+              <td style="font-size:0.88rem">${esc(m)}</td>
+              <td style="width:60px;text-align:right"><button class="btn btn-sm btn-danger" onclick="delRoute('${esc(m)}')">&times;</button></td>
+            </tr>`).join('')}
+          </tbody></table>
+        </div>
+      </div>
+    `).join('');
+  }
+  const sel = document.getElementById('r-provider');
+  sel.innerHTML = (cfg.providers || []).map(p => `<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('');
+}
+
+function openRouteModal() { document.getElementById('r-model').value = ''; document.getElementById('route-modal').classList.add('show'); }
+
+async function saveRoute() {
+  const model = document.getElementById('r-model').value;
+  const provider = document.getElementById('r-provider').value;
+  if (!model || !provider) return;
+  await api('POST', '/api/routes', { model, provider });
+  toast('Route added', true);
+  closeModal('route-modal');
+  loadRoutes();
+}
+
+async function delRoute(model) {
+  await api('DELETE', `/api/routes/${encodeURIComponent(model)}`);
+  toast('Deleted', true);
+  loadRoutes();
+}
+
+// ---- API Keys ----
+async function loadKeys() {
+  const keys = await api('GET', '/api/keys');
+  const tbody = document.getElementById('keys-body');
+  tbody.innerHTML = keys.map(k => {
+    const modelInfo = (k.models && k.models.length) ? `${k.models.length} models` : 'all models';
+    const modelTags = (k.models && k.models.length) ? k.models.slice(0, 3).map(m => `<span class="tag">${esc(m)}</span>`).join(' ') + (k.models.length > 3 ? ` <span class="tag">+${k.models.length - 3}</span>` : '') : '<span class="tag" style="background:#166534">all</span>';
+    return `<tr>
+    <td><strong>${esc(k.name || '-')}</strong></td>
+    <td>
+      <span class="key-display" onclick="copyKey(this)" data-key="${esc(k.key)}">${esc(k.key)}</span>
+    </td>
+    <td>${modelTags}</td>
+    <td style="color:#94a3b8;font-size:0.82rem">${(k.created_at || '').slice(0,10)}</td>
+    <td><button class="btn btn-sm btn-danger" onclick="delKey('${esc(k.key)}')">Revoke</button></td>
+  </tr>`;
+  }).join('');
+}
+
+async function copyKey(el) {
+  const fullKey = el.textContent;
+  const ta = document.createElement('textarea');
+  ta.value = fullKey;
+  ta.style.cssText = 'position:fixed;left:-9999px;top:0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  const ok = document.execCommand('copy');
+  document.body.removeChild(ta);
+  toast(ok ? 'Copied!' : 'Select and copy manually', ok);
+}
+
+function openKeyModal() {
+  document.getElementById('k-name').value = '';
+  document.getElementById('k-model-filter').value = '';
+  document.getElementById('key-modal').classList.add('show');
+  loadKeyModels();
+}
+
+async function loadKeyModels() {
+  const cfg = await api('GET', '/api/config');
+  const routes = cfg.model_routes || {};
+  // Group models by provider
+  const grouped = {};
+  for (const [model, provider] of Object.entries(routes)) {
+    if (!grouped[provider]) grouped[provider] = [];
+    grouped[provider].push(model);
+  }
+  const list = document.getElementById('k-models');
+  if (!Object.keys(grouped).length) {
+    list.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:12px">No model routes yet. Add routes first.</div>';
+    return;
+  }
+  let html = '';
+  for (const [provider, models] of Object.entries(grouped).sort()) {
+    html += `<div style="padding:6px 8px;color:#64748b;font-size:0.78rem;font-weight:600;text-transform:uppercase;cursor:pointer" onclick="toggleGroup(this)">${esc(provider)} (${models.length})</div>`;
+    for (const m of models.sort()) {
+      html += `<div class="model-item" data-provider="${esc(provider)}" onclick="this.querySelector('input').click()">
+        <input type="checkbox" value="${esc(m)}" onclick="event.stopPropagation()">
+        <label>${esc(m)}</label>
+      </div>`;
+    }
+  }
+  list.innerHTML = html;
+}
+
+function filterKeyModels() {
+  const q = document.getElementById('k-model-filter').value.toLowerCase();
+  document.querySelectorAll('#k-models .model-item').forEach(el => {
+    el.style.display = el.querySelector('label').textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+function toggleKeyAll() {
+  const items = document.querySelectorAll('#k-models .model-item:not([style*="display: none"]) input');
+  const allChecked = [...items].every(cb => cb.checked);
+  items.forEach(cb => cb.checked = !allChecked);
+}
+
+function toggleGroup(headerEl) {
+  let el = headerEl.nextElementSibling;
+  const hidden = el && el.style.display === 'none';
+  while (el && el.classList.contains('model-item')) {
+    el.style.display = hidden ? '' : 'none';
+    el = el.nextElementSibling;
+  }
+}
+
+async function createKey() {
+  const checked = [...document.querySelectorAll('#k-models input:checked')].map(cb => cb.value);
+  const data = {
+    name: document.getElementById('k-name').value,
+    models: checked,
+  };
+  const r = await api('POST', '/api/keys', data);
+  if (r.ok) {
+    toast('Key generated!', true);
+    prompt('Copy this key:', r.key);
+  }
+  closeModal('key-modal');
+  loadKeys();
+}
+
+async function delKey(key) {
+  await api('POST', '/api/keys/delete', { key: key });
+  toast('Revoked', true);
+  loadKeys();
+}
+
+// ---- Stats ----
+async function loadStats() {
+  const stats = await api('GET', '/api/stats');
+  document.getElementById('stat-total').textContent = stats.total_requests || 0;
+  document.getElementById('stat-models').textContent = Object.keys(stats.requests_by_model || {}).length;
+  const cfg = await api('GET', '/api/config');
+  document.getElementById('stat-providers').textContent = (cfg.providers || []).filter(p => p.status === 'active').length;
+}
+
+// ---- Usage ----
+function updateUsage() {
+  const host = location.hostname;
+  const port = location.port || '3000';
+  const base = `http://${host}:${port}`;
+  document.getElementById('usage-openai').textContent =
+`export OPENAI_BASE_URL=${base}/v1
+export OPENAI_API_KEY=sk-your-gateway-key`;
+  document.getElementById('usage-anthropic').textContent =
+`export ANTHROPIC_BASE_URL=${base}
+export ANTHROPIC_API_KEY=sk-your-gateway-key`;
+}
+
+// Init
+loadProviders();
+</script>
+</body>
+</html>
