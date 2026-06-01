@@ -9,7 +9,7 @@ A lightweight API gateway for managing multiple LLM providers (OpenAI, Claude, G
 - 🔍 Auto-scan upstream models
 - 📊 Request statistics
 - 🐳 One-click Docker deployment
-- 💻 Works on ARMv7 (32-bit) devices
+- 💻 Works on ARMv7 (32-bit) devices(由于玩客云的配置不高，这个gateway搓出来专门争对32bARMv7这一类无法部署NEWAPI的)
 
 ## Quick Deploy
 
